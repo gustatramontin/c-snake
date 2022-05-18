@@ -26,20 +26,40 @@ struct snake {
     size_t body_size;
 } Snake;
 
+void logic();
+void grow();
+void input();
+
 void logic() {
+    if (Snake.body_size <=5)
+        grow();
 
-        Snake.body[0].x += direction[0];
-        Snake.body[0].y += direction[1];
 
-        Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
-        Snake.body[0].y = clamp(Snake.body[0].y, 0, h);
-
-    for (int i=1; i <= Snake.body_size; i++) {
+    for (int i=Snake.body_size-1; i >= 1; i--) {
         
-        Snake.body[i+1].x += Snake.body[i].x;
-        Snake.body[i+1].y += Snake.body[i].y;
+        Snake.body[i].x = Snake.body[i-1].x;
+        Snake.body[i].y = Snake.body[i-1].y;
     }
+
+    Snake.body[0].x += direction[0];
+    Snake.body[0].y += direction[1];
+
+    Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
+    Snake.body[0].y = clamp(Snake.body[0].y, 0, h);
+
  
+}
+
+void grow() {
+    
+    if (Snake.body_size > sizeof(Snake.body) / sizeof(Snake_section)) {
+            Snake.body = (Snake_section *) realloc(Snake.body, (Snake.body_size+5) * sizeof(Snake_section));
+    }
+
+    Snake.body[Snake.body_size].x = 0;
+    Snake.body[Snake.body_size].y = 0;
+
+    Snake.body_size += 1;
 }
 
 void input(int key) {
@@ -51,7 +71,7 @@ void input(int key) {
             break;
         case 'a':
             direction[0] = -1;
-            direction[1] = -0;
+            direction[1] = 0;
             break;
         case 'w':
             direction[0] = 0;
@@ -66,7 +86,7 @@ void input(int key) {
 
 int main(int argc, char **argv) {
 
-    Snake.body = (Snake_section *) malloc(sizeof(Snake_section) * 1);
+    Snake.body = (Snake_section *) malloc(sizeof(Snake_section) * 5);
     Snake.body[0].x = 5;
     Snake.body[0].y = 5;
     Snake.body[0].is_head = 1;
@@ -93,7 +113,7 @@ int main(int argc, char **argv) {
             input(ch);
         }
 
-        for (int i=0; i <= Snake.body_size; i++) {
+        for (int i=0; i < Snake.body_size; i++) {
             wmove(win, Snake.body[i].y, Snake.body[i].x);
             waddch(win, '#');
             
