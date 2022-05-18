@@ -38,13 +38,11 @@ struct fruit {
 void logic();
 void grow();
 void input();
+void fruit_logic();
 int new_x();
 int new_y();
 
 void logic() {
-    if (Snake.body_size <=5)
-        grow();
-
 
     for (int i=Snake.body_size-1; i >= 1; i--) {
         
@@ -58,7 +56,15 @@ void logic() {
     Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
     Snake.body[0].y = clamp(Snake.body[0].y, 0, h);
 
- 
+    fruit_logic();
+}
+
+void fruit_logic() {
+    if (Snake.body[0].x == Fruit.x && Snake.body[0].y == Fruit.y) {
+        Fruit.x = new_x();
+        Fruit.y = new_y();
+        grow();
+    }
 }
 
 void grow() {
