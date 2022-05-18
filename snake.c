@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include <time.h>
+#include <sys/ioctl.h>
+
 
 // waddch add character
 // mvaddch move and add character
@@ -24,11 +27,19 @@ typedef struct snake_part {
 struct snake {
     Snake_section * body;
     size_t body_size;
+    char ch;
 } Snake;
+
+struct fruit {
+    int x,y;
+    char ch;
+} Fruit;
 
 void logic();
 void grow();
 void input();
+int new_x();
+int new_y();
 
 void logic() {
     if (Snake.body_size <=5)
@@ -84,20 +95,45 @@ void input(int key) {
     }
 }
 
+int new_x() {
+    int new_x = rand() % w;
+
+    return new_x;
+}
+
+int new_y() {
+    int new_y = rand() % h;
+    return new_y;
+
+}
+
 int main(int argc, char **argv) {
+    
+    srand((unsigned) time(NULL));
+
+    struct winsize wins;
+    ioctl(0, TIOCGWINSZ, &wins);
+
+    w = wins.ws_col;
+    h = wins.ws_row;
+
 
     Snake.body = (Snake_section *) malloc(sizeof(Snake_section) * 5);
-    Snake.body[0].x = 5;
-    Snake.body[0].y = 5;
+    Snake.body[0].x = new_x();
+    Snake.body[0].y = new_y();
     Snake.body[0].is_head = 1;
     Snake.body_size += 1;
+    Snake.ch = '#';
+    Fruit.x = new_x();
+    Fruit.y = new_y();
+    Fruit.ch = '@';
 
+  
     initscr();
  
     noecho();
     cbreak();
 
-    getmaxyx(stdscr, h , w);
 
     WINDOW * win = newwin(h, w, 0,0);
    
@@ -115,9 +151,13 @@ int main(int argc, char **argv) {
 
         for (int i=0; i < Snake.body_size; i++) {
             wmove(win, Snake.body[i].y, Snake.body[i].x);
-            waddch(win, '#');
+            waddch(win, Snake.ch);
             
         }
+
+
+        wmove(win, Fruit.y, Fruit.x);
+        waddch(win, Fruit.ch);
 
         logic();
 
