@@ -55,8 +55,17 @@ int map2[] = {
     0,0,0,0,0,
 };
 
-int *maps[] = {map1, map2};
-int *maps_sizes[] = { map1_size, map2_size};
+int map3_size[] = {5,5};
+int map3[] = {
+    0,0,0,0,0,
+    0,0,0,1,0,
+    0,0,0,0,0,
+    0,1,0,0,0,
+    0,0,0,0,0,
+};
+
+int *maps[] = {map1, map2, map3};
+int *maps_sizes[] = { map1_size, map2_size, map3_size};
 
 
 typedef struct snake_part {
@@ -175,7 +184,7 @@ int new_y() {
 }
 
 char nearest_neighbor_scale(int x, int y) {
-    int map_i = 1;
+    int map_i = 2;
 
     int *map = maps[map_i];
     int *map_size = maps_sizes[map_i];
