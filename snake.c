@@ -35,6 +35,7 @@ int direction[2] = { 0,0 };
 int score;
 WINDOW * win;
 
+char error[50];
 
 int map1_size[] = {5,5};
 int map1[] = {
@@ -180,12 +181,20 @@ char nearest_neighbor_scale(int x, int y) {
     int *map_size = maps_sizes[map_i];
 
     float x_ratio = w / map_size[0];
-    float y_ratio = (h-1) / map_size[1];
+    float y_ratio = (h) / map_size[1];
 
     int map_x = (int) ceil((x+1) / x_ratio)-1;
 
     int map_y = (int) ceil((y+1) / y_ratio)-1;
-    int map_char = map[map_y*(map1_size[0])+map_x];
+
+    map_x = clamp(map_x, 0, map_size[0]-1);
+    map_y = clamp(map_y, 0, map_size[1]-1);
+
+    int map_pos = map_y*(map_size[0])+map_x;
+
+    if (map_pos > 24 )
+        snprintf(error, sizeof(error), "%d %d-%d %f-%f",map_pos, map_x,map_y, x_ratio, y_ratio);
+    int map_char = map[map_pos];
 
     switch (map_char) {
         case 0:
@@ -228,6 +237,7 @@ void draw_menu() {
     char buf[10];
     snprintf(buf, sizeof(buf), "SCORE %03d", score);
     mvwaddstr(win, 0,2, buf);
+    mvwaddstr(win, 0,2+sizeof(buf), error);
 }
 
 int main(int argc, char **argv) {
