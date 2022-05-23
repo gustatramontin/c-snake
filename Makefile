@@ -1,3 +1,3 @@
 
 all: 
-	gcc -o bin/snake snake.c -lncurses
+	gcc -o bin/snake snake.c -lncurses -lm

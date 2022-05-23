@@ -4,6 +4,8 @@
 #include <ncurses.h>
 #include <time.h>
 #include <sys/ioctl.h>
+#include <math.h>
+#include <signal.h>
 
 
 // waddch add character
@@ -33,6 +35,29 @@ int direction[2] = { 0,0 };
 int score;
 WINDOW * win;
 
+
+int map1_size[] = {5,5};
+int map1[] = {
+    0,0,0,0,0,
+    0,1,0,1,0,
+    0,1,0,1,0,
+    0,1,0,1,0,
+    0,0,0,0,0,
+};
+
+int map2_size[] = {5,5};
+int map2[] = {
+    0,0,0,0,0,
+    1,1,1,0,0,
+    0,0,0,0,0,
+    0,0,1,1,1,
+    0,0,0,0,0,
+};
+
+int *maps[] = {map1, map2};
+int *maps_sizes[] = { map1_size, map2_size};
+
+
 typedef struct snake_part {
     int x, y, is_head;
 } Snake_section;
@@ -49,6 +74,8 @@ struct fruit {
     char ch;
 } Fruit;
 
+void handle_resize(int signal);
+void redefine_size();
 void logic();
 void grow();
 void input();
@@ -56,6 +83,21 @@ void fruit_logic();
 int new_x();
 int new_y();
 void draw_game();
+char nearest_neighbor_scale(int x, int y);
+
+void handle_resize(int signal) {
+    endwin();
+    redefine_size();
+}
+
+void redefine_size() {
+    struct winsize wins;
+    ioctl(0, TIOCGWINSZ, &wins);
+
+    w = wins.ws_col;
+    h = wins.ws_row;
+
+}
 
 void logic() {
 
@@ -65,8 +107,10 @@ void logic() {
         Snake.body[i].y = Snake.body[i-1].y;
     }
 
-    Snake.body[0].x += direction[0];
-    Snake.body[0].y += direction[1];
+    if (nearest_neighbor_scale(Snake.body[0].x+=direction[0], Snake.body[0].y+=direction[1]) == '+') {
+        Snake.body[0].x -= direction[0];
+        Snake.body[0].y -= direction[1];
+    }
 
     Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
     Snake.body[0].y = clamp(Snake.body[0].y, 1, h-1);
@@ -129,7 +173,39 @@ int new_y() {
 
 }
 
+char nearest_neighbor_scale(int x, int y) {
+    int map_i = 1;
+
+    int *map = maps[map_i];
+    int *map_size = maps_sizes[map_i];
+
+    float x_ratio = w / map_size[0];
+    float y_ratio = (h-1) / map_size[1];
+
+    int map_x = (int) ceil((x+1) / x_ratio)-1;
+
+    int map_y = (int) ceil((y+1) / y_ratio)-1;
+    int map_char = map[map_y*(map1_size[0])+map_x];
+
+    switch (map_char) {
+        case 0:
+            return ' ';
+            break;
+        case 1:
+            return '+';
+            break;
+    }
+}
+
 void draw_game() {
+
+    // Draw map
+    for (int j=1; j<h; j++) {
+        for (int i=0; i<w; i++) {
+            mvwaddch(win, j,i, nearest_neighbor_scale(i,j-1));
+        }    
+    }
+
     // Draw player
     PLAYER_1_COLOR
     mvwaddch(win, Snake.body[0].y, Snake.body[0].x, Snake.head_ch);
@@ -151,19 +227,16 @@ void draw_game() {
 void draw_menu() {
     char buf[10];
     snprintf(buf, sizeof(buf), "SCORE %03d", score);
-    mvwaddstr(win, 0,0, buf);
+    mvwaddstr(win, 0,2, buf);
 }
 
 int main(int argc, char **argv) {
     
     srand((unsigned) time(NULL));
 
-    struct winsize wins;
-    ioctl(0, TIOCGWINSZ, &wins);
+    redefine_size();
 
-    w = wins.ws_col;
-    h = wins.ws_row;
-
+    signal(SIGWINCH, handle_resize);
 
     Snake.body = (Snake_section *) malloc(sizeof(Snake_section) * 5);
     Snake.body[0].x = new_x();
