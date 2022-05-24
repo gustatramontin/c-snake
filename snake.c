@@ -39,6 +39,15 @@ char block_char = '#';
 
 char error[50];
 
+enum Scenes {
+    GAME,
+    GAME_OVER
+};
+
+enum Scenes current_scene = GAME;
+
+int is_game_stopped = 0;
+
 int map1_size[] = {5,5};
 int map1[] = {
     0,0,0,0,0,
@@ -90,7 +99,9 @@ void handle_resize(int signal);
 void redefine_size();
 void logic();
 void grow();
-void input();
+void game_scene_input();
+void game_scene_loop();
+void game_over_scene_loop();
 void new_fruit();
 void fruit_logic();
 int new_x();
@@ -121,6 +132,7 @@ void logic() {
         Snake.body[i].y = Snake.body[i-1].y;
     }
     if (nearest_neighbor_scale(Snake.body[0].x,Snake.body[0].y) == block_char) {
+        current_scene = GAME_OVER;
         reset();
     }
     Snake.body[0].x+=direction[0];
@@ -161,7 +173,7 @@ void grow() {
     Snake.body_size += 1;
 }
 
-void input(int key) {
+void game_scene_input(int key) {
     //printf("%c",key);
     switch (key) {
         case 'd':
@@ -269,6 +281,43 @@ void reset() {
     Snake.body_size = 1;
     Fruit.x = new_x();
     Fruit.y = new_y();
+    direction[0] = 0;
+    direction[1] = 0;
+}
+
+void game_over_scene_loop() {
+    int ch;
+    if ((ch = getch()) != ERR) {
+            switch (ch)
+            {
+            case 'q':
+            case 27: // Esc
+                is_game_stopped = 1;
+                break;
+            
+            default:
+                current_scene = GAME;
+                break;
+            }
+        }
+
+    mvwaddstr(win, 0,2, "GAME OVER");
+    mvwaddstr(win, h-1,2, "Press Esc|q to exit");
+    mvwaddstr(win, 2,2, "Press any key to start");
+
+
+}
+
+void game_scene_loop() {
+    int ch;
+    if ((ch = getch()) != ERR) {
+            game_scene_input(ch);
+        }
+
+        draw_game();
+        draw_menu();
+        logic();
+
 }
 
 int main(int argc, char **argv) {
@@ -299,9 +348,7 @@ int main(int argc, char **argv) {
 
 
     win = newwin(h, w, 0,0);
-   
 
-    int ch;
     nodelay(stdscr, TRUE);
     
     if (has_colors() == FALSE || can_change_color() == FALSE) {
@@ -320,13 +367,19 @@ int main(int argc, char **argv) {
     init_pair(3, COLOR_RED, COLOR_BLACK);
 
     for (;;) {
-        if ((ch = getch()) != ERR) {
-            input(ch);
-        }
+        if (is_game_stopped) break;
 
-        draw_game();
-        draw_menu();
-        logic();
+        switch (current_scene)
+        {
+        case GAME:
+            game_scene_loop();
+            break;
+        case GAME_OVER:
+            game_over_scene_loop();
+        
+        default:
+            break;
+        }
 
         wrefresh(win);
 
