@@ -184,10 +184,10 @@ int new_y() {
 }
 
 char nearest_neighbor_scale(int x, int y) {
-    int map_i = 2;
+    int map_number = 2;
 
-    int *map = maps[map_i];
-    int *map_size = maps_sizes[map_i];
+    int *map = maps[map_number];
+    int *map_size = maps_sizes[map_number];
 
     float x_ratio = w / map_size[0];
     float y_ratio = (h) / map_size[1];
