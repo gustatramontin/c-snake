@@ -35,6 +35,8 @@ int direction[2] = { 0,0 };
 int score;
 WINDOW * win;
 
+char block_char = '#';
+
 char error[50];
 
 int map1_size[] = {5,5};
@@ -89,11 +91,13 @@ void redefine_size();
 void logic();
 void grow();
 void input();
+void new_fruit();
 void fruit_logic();
 int new_x();
 int new_y();
 void draw_game();
 char nearest_neighbor_scale(int x, int y);
+void reset();
 
 void handle_resize(int signal) {
     endwin();
@@ -116,11 +120,11 @@ void logic() {
         Snake.body[i].x = Snake.body[i-1].x;
         Snake.body[i].y = Snake.body[i-1].y;
     }
-
-    if (nearest_neighbor_scale(Snake.body[0].x+=direction[0], Snake.body[0].y+=direction[1]) == '+') {
-        Snake.body[0].x -= direction[0];
-        Snake.body[0].y -= direction[1];
+    if (nearest_neighbor_scale(Snake.body[0].x,Snake.body[0].y) == block_char) {
+        reset();
     }
+    Snake.body[0].x+=direction[0];
+    Snake.body[0].y+=direction[1];
 
     Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
     Snake.body[0].y = clamp(Snake.body[0].y, 1, h-1);
@@ -128,11 +132,19 @@ void logic() {
     fruit_logic();
 }
 
+void new_fruit() {
+    Fruit.x = new_x();
+    Fruit.y = new_y();
+
+    if (nearest_neighbor_scale(Fruit.x, Fruit.y) == block_char) 
+        new_fruit();
+    
+};
+
 void fruit_logic() {
     if (Snake.body[0].x == Fruit.x && Snake.body[0].y == Fruit.y) {
-        Fruit.x = new_x();
-        Fruit.y = new_y();
         grow();
+        new_fruit();
         score += 10;
     }
 }
@@ -190,7 +202,7 @@ char nearest_neighbor_scale(int x, int y) {
     int *map_size = maps_sizes[map_i];
 
     float x_ratio = w / map_size[0];
-    float y_ratio = (h) / map_size[1];
+    float y_ratio = (h-1) / map_size[1];
 
     int map_x = (int) ceil((x+1) / x_ratio)-1;
 
@@ -210,7 +222,7 @@ char nearest_neighbor_scale(int x, int y) {
             return ' ';
             break;
         case 1:
-            return '+';
+            return block_char;
             break;
     }
 }
@@ -218,9 +230,9 @@ char nearest_neighbor_scale(int x, int y) {
 void draw_game() {
 
     // Draw map
-    for (int j=1; j<h; j++) {
+    for (int j=0; j<h; j++) {
         for (int i=0; i<w; i++) {
-            mvwaddch(win, j,i, nearest_neighbor_scale(i,j-1));
+            mvwaddch(win, j,i, nearest_neighbor_scale(i,j));
         }    
     }
 
@@ -247,6 +259,16 @@ void draw_menu() {
     snprintf(buf, sizeof(buf), "SCORE %03d", score);
     mvwaddstr(win, 0,2, buf);
     mvwaddstr(win, 0,2+sizeof(buf), error);
+}
+
+void reset() {
+    free(Snake.body);
+    Snake.body = (Snake_section *) malloc(sizeof(Snake_section) * 5);
+    Snake.body[0].x = new_x();
+    Snake.body[0].y = new_y();
+    Snake.body_size = 1;
+    Fruit.x = new_x();
+    Fruit.y = new_y();
 }
 
 int main(int argc, char **argv) {
@@ -302,8 +324,8 @@ int main(int argc, char **argv) {
             input(ch);
         }
 
-        draw_menu();
         draw_game();
+        draw_menu();
         logic();
 
         wrefresh(win);
