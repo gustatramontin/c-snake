@@ -1,3 +1,3 @@
 
 all: 
-	gcc -o bin/snake snake.c -lncurses -lm
+	gcc -o bin/snake snake.c -lncursesw -lm -D_GNU_SOURCE -D_DEFAULT_SOURCE 

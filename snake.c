@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <ncurses.h>
+#include <curses.h>
 #include <time.h>
 #include <sys/ioctl.h>
 #include <math.h>
 #include <signal.h>
+#include <locale.h>
 
 
 // waddch add character
@@ -35,7 +36,7 @@ int direction[2] = { 0,0 };
 int score;
 WINDOW * win;
 
-char block_char = '#';
+wchar_t block_char = L'█';
 
 char error[50];
 
@@ -92,7 +93,7 @@ struct snake {
 
 struct fruit {
     int x,y;
-    char ch;
+    wchar_t ch;
 } Fruit;
 
 void handle_resize(int signal);
@@ -107,7 +108,7 @@ void fruit_logic();
 int new_x();
 int new_y();
 void draw_game();
-char nearest_neighbor_scale(int x, int y);
+wchar_t nearest_neighbor_scale(int x, int y);
 void reset();
 
 void handle_resize(int signal) {
@@ -125,15 +126,23 @@ void redefine_size() {
 }
 
 void logic() {
+    
+    int self_death = 0;
+    for (int i=1; i < Snake.body_size; i++) {
+        if (Snake.body[0].x == Snake.body[i].x && Snake.body[0].y == Snake.body[i].y )
+            self_death = 1;
+            
+    }
 
     for (int i=Snake.body_size-1; i >= 1; i--) {
         
         Snake.body[i].x = Snake.body[i-1].x;
         Snake.body[i].y = Snake.body[i-1].y;
     }
-    if (nearest_neighbor_scale(Snake.body[0].x,Snake.body[0].y) == block_char) {
+    if (nearest_neighbor_scale(Snake.body[0].x,
+                                Snake.body[0].y) == block_char 
+            || self_death) {
         current_scene = GAME_OVER;
-        reset();
     }
     Snake.body[0].x+=direction[0];
     Snake.body[0].y+=direction[1];
@@ -207,7 +216,7 @@ int new_y() {
 
 }
 
-char nearest_neighbor_scale(int x, int y) {
+wchar_t nearest_neighbor_scale(int x, int y) {
     int map_number = 2;
 
     int *map = maps[map_number];
@@ -244,7 +253,8 @@ void draw_game() {
     // Draw map
     for (int j=0; j<h; j++) {
         for (int i=0; i<w; i++) {
-            mvwaddch(win, j,i, nearest_neighbor_scale(i,j));
+            wmove(win, j,i);
+            wprintw(win, "%lc", nearest_neighbor_scale(i,j));
         }    
     }
 
@@ -262,7 +272,7 @@ void draw_game() {
     // Draw fruit
     FRUIT_COLOR
     wmove(win, Fruit.y, Fruit.x);
-    waddch(win, Fruit.ch);
+    wprintw(win, "%lc", Fruit.ch);
     FRUIT_COLOR_OFF
 }
 
@@ -297,6 +307,7 @@ void game_over_scene_loop() {
             
             default:
                 current_scene = GAME;
+                reset();
                 break;
             }
         }
@@ -337,9 +348,9 @@ int main(int argc, char **argv) {
     Snake.head_ch = '&';
     Fruit.x = new_x();
     Fruit.y = new_y();
-    Fruit.ch = '@';
+    Fruit.ch = L'Ó';
 
-  
+    setlocale(LC_ALL, "");
     initscr();
     start_color();
  
