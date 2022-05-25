@@ -147,9 +147,11 @@ void logic() {
     Snake.body[0].x+=direction[0];
     Snake.body[0].y+=direction[1];
 
-    Snake.body[0].x = clamp(Snake.body[0].x, 0, w);
-    Snake.body[0].y = clamp(Snake.body[0].y, 1, h-1);
-
+    if (Snake.body[0].x < 0 || Snake.body[0].x > w)
+        Snake.body[0].x = w-Snake.body[0].x;
+    if (Snake.body[0].y < 1 || Snake.body[0].y > h)
+        Snake.body[0].y = h-Snake.body[0].y+1;
+    
     fruit_logic();
 }
 
