@@ -35,6 +35,7 @@ int h, w;
 int direction[2] = { 0,0 }; 
 int score;
 WINDOW * win;
+float dash = 1;
 
 wchar_t block_char = L'█';
 
@@ -76,6 +77,8 @@ int map3[] = {
     0,0,0,0,0,
 };
 
+int num_of_maps = 3;
+int map_number;
 int *maps[] = {map1, map2, map3};
 int *maps_sizes[] = { map1_size, map2_size, map3_size};
 
@@ -203,6 +206,23 @@ void game_scene_input(int key) {
             direction[0] = 0;
             MOVE(1,1);
             break;
+
+        case 'D':
+            MOVE(0,2);
+            direction[1] = 0;
+            break;
+        case 'A':
+            MOVE(0,-2);
+            direction[1] = 0;
+            break;
+        case 'W':
+            direction[0] = 0;
+            MOVE(1,-2);
+            break;
+        case 'S':
+            direction[0] = 0;
+            MOVE(1,2);
+            break;
     }
 }
 
@@ -218,8 +238,11 @@ int new_y() {
 
 }
 
+int new_map() {
+    return rand() % num_of_maps;
+}
+
 wchar_t nearest_neighbor_scale(int x, int y) {
-    int map_number = 2;
 
     int *map = maps[map_number];
     int *map_size = maps_sizes[map_number];
@@ -295,6 +318,7 @@ void reset() {
     Fruit.y = new_y();
     direction[0] = 0;
     direction[1] = 0;
+    map_number = new_map();
 }
 
 void game_over_scene_loop() {
@@ -352,6 +376,8 @@ int main(int argc, char **argv) {
     Fruit.y = new_y();
     Fruit.ch = L'Ó';
 
+    map_number = new_map();
+
     setlocale(LC_ALL, "");
     initscr();
     start_color();
@@ -398,7 +424,7 @@ int main(int argc, char **argv) {
 
         int delay = 64*1000;
         if (direction[1] != 0)
-            delay *= 1.6;
+            delay *= 1.5;
         usleep(delay);
         clear();
     }
