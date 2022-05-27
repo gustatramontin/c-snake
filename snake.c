@@ -50,37 +50,10 @@ enum Scenes current_scene = GAME;
 
 int is_game_stopped = 0;
 
-int map1_size[] = {5,5};
-int map1[] = {
-    0,0,0,0,0,
-    0,1,0,1,0,
-    0,1,0,1,0,
-    0,1,0,1,0,
-    0,0,0,0,0,
-};
-
-int map2_size[] = {5,5};
-int map2[] = {
-    0,0,0,0,0,
-    1,1,1,0,0,
-    0,0,0,0,0,
-    0,0,1,1,1,
-    0,0,0,0,0,
-};
-
-int map3_size[] = {5,5};
-int map3[] = {
-    0,0,0,0,0,
-    0,0,0,1,0,
-    0,0,0,0,0,
-    0,1,0,0,0,
-    0,0,0,0,0,
-};
-
-int num_of_maps = 3;
+int num_of_maps=0;// = 3;
 int map_number;
-int *maps[] = {map1, map2, map3};
-int *maps_sizes[] = { map1_size, map2_size, map3_size};
+int **maps = NULL; //= {map1, map2, map3};
+int **maps_size = NULL;// = { map1_size, map2_size, map3_size};
 
 
 typedef struct snake_part {
@@ -112,6 +85,7 @@ int new_x();
 int new_y();
 void draw_game();
 wchar_t nearest_neighbor_scale(int x, int y);
+void load_maps();
 void reset();
 
 void handle_resize(int signal) {
@@ -245,7 +219,7 @@ int new_map() {
 wchar_t nearest_neighbor_scale(int x, int y) {
 
     int *map = maps[map_number];
-    int *map_size = maps_sizes[map_number];
+    int *map_size = maps_size[map_number];
 
     float x_ratio = w / map_size[0];
     float y_ratio = (h-1) / map_size[1];
@@ -357,6 +331,64 @@ void game_scene_loop() {
 
 }
 
+void load_maps(const char * map_file) {
+    FILE *fp;
+
+    fp = fopen(map_file, "r");
+    
+    int line = 0;
+    
+    char buff[20];
+
+    int map_cols;
+    int map_rows;
+    int *map;
+    int next = 0;
+    while (fgets(buff, sizeof buff, fp) != NULL) {
+        if (buff[0] == 'd') {
+            sscanf(buff, "d %d,%d", &map_cols, &map_rows);
+            map = (int *) malloc(sizeof(int) * (map_cols * map_rows));
+            next = 0;
+        } else {
+            for (int i = 0; i < map_cols; i++) {
+                switch (buff[i])
+                {
+                case '.':
+                    map[next] = 0;
+                    next++;
+                    break;
+                case '#':
+                    map[next] = 1;
+                    next++;
+                    break; 
+                default:
+                    break;
+                }
+            }
+
+            if (next == (map_cols * map_rows)) {
+                num_of_maps++;
+                int * new_size = (int *) malloc(sizeof(int)*2);
+                new_size[0] = map_cols;
+                new_size[1] = map_rows;
+                maps_size = (int **) realloc(maps_size, num_of_maps*sizeof(int));
+                maps_size[num_of_maps-1] = new_size;
+
+                maps = (int **) realloc(maps, sizeof(int)*num_of_maps);
+                maps[num_of_maps-1] = map;                
+
+            }
+
+        }
+
+        line++;
+    }
+
+    snprintf(error, sizeof error, "%d,%d", maps_size[0][0], maps_size[0][1]);
+
+    fclose(fp);
+}
+
 int main(int argc, char **argv) {
     
     srand((unsigned) time(NULL));
@@ -375,7 +407,8 @@ int main(int argc, char **argv) {
     Fruit.x = new_x();
     Fruit.y = new_y();
     Fruit.ch = L'Ó';
-
+    
+    load_maps("maps.txt");
     map_number = new_map();
 
     setlocale(LC_ALL, "");
